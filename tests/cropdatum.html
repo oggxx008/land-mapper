@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript"
+            src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <script type="text/javascript" src="/js/croputils.js"></script>
+    <script type="text/javascript" src="/js/cropdatum.js"></script>
+    <title>Tests for js/cropdatum.js</title>
+  </head>
+
+  <body>
+    <script type="text/javascript">
+      goog.require('monsoon.alpha.gli.CropDatum');
+
+      // None of these numbers are significant, they are just unique values.
+      var CROP_ = 'SOME_CROP';
+
+      var TCs_ = {
+        CROP_YIELD_1: 2,
+        CROP_YIELD_2: 7,
+        PRECIP: 3,
+        GDD: 4,
+        CLIMATE_BIN: 5,
+        POTENTIAL_YIELD: 6,
+        LOCATION: 33.3,  //  new google.maps.LatLng(38, -122),
+        AREA: 0.3,
+        DOUBLE_TOLERANCE: 0.000000000001,  // workaround for imprecision
+        MODEL_BIAS: 0.5
+      };
+
+      var MGMT_INPUTS_ = new monsoon.alpha.gli.MgmtInputs(
+          [10, 5, 5, 1]);
+      var MGMT_INPUTS_INCOMPLETE_ = new monsoon.alpha.gli.MgmtInputs(
+          [10, null, 5, 1]);
+      var MGMT_INPUTS_INCOMPLETE_I_ = new monsoon.alpha.gli.MgmtInputs(
+          [10, 5, 5, null]);
+      var EXCESS_INPUTS_ = new monsoon.alpha.gli.MgmtInputs([4, 3, 2, 1]);
+      var YIELD_MODEL_RESULT_ = new monsoon.alpha.gli.YieldModelResult(
+          TCs_.CROP_YIELD_2, EXCESS_INPUTS_);
+      var MODEL_STATE_NODATA_ = new monsoon.alpha.gli.ModelState(
+          false, false, false);
+      var MODEL_STATE_HASDATA_ = new monsoon.alpha.gli.ModelState(
+          true, true, true);
+
+
+      function createCropDatum_(cropYield, opt_mgmtInputs) {
+        var mgmtInputs = opt_mgmtInputs || MGMT_INPUTS_;
+        return new monsoon.alpha.gli.CropDatum(
+            cropYield,
+            TCs_.PRECIP,
+            TCs_.GDD,
+            TCs_.CLIMATE_BIN,
+            TCs_.POTENTIAL_YIELD,
+            mgmtInputs,
+            YIELD_MODEL_RESULT_);
+      }
+
+
+      function testCropDatum() {
+        var testObj = createCropDatum_(TCs_.CROP_YIELD_1);
+        assertEquals(TCs_.CROP_YIELD_1, testObj.getYield());
+        assertEquals(TCs_.PRECIP, testObj.getPrecip());
+        assertEquals(TCs_.GDD, testObj.getGdd());
+        assertEquals(TCs_.CLIMATE_BIN, testObj.getClimateBin());
+        assertEquals(TCs_.POTENTIAL_YIELD, testObj.getPotentialYield());
+        assertObjectEquals(
+            'getMgmtInputs', MGMT_INPUTS_, testObj.getMgmtInputs());
+        assertObjectEquals(
+            'getExcess', EXCESS_INPUTS_, testObj.getMgmtExcess());
+        assertObjectEquals(
+            'getYieldModelResult',
+            YIELD_MODEL_RESULT_,
+            testObj.getYieldModelResult());
+        assertObjectEquals(
+            'getModeledYield', TCs_.CROP_YIELD_2, testObj.getModeledYield());
+      }
+
+
+      /**
+       * Creates a {@link monsoon.alpha.gli.ScenarioDatum} object
+       * with the specified base yield, scenario yield, and area.
+       * @param {?number} opt_baseYield The current yield.
+       * @param {?number} opt_scenarioYield The future yield.
+       * @param {?number} opt_area The area under cultivation.
+       * @return {!monsoon.alpha.gli.ScenarioDatum} The scenario datum created.
+       */
+      function createScenarioDatum_(
+          opt_baseYield, opt_scenarioYield, opt_area) {
+        var yield1 = opt_baseYield || TCs_.CROP_YIELD_1;
+        var yield2 = opt_scenarioYield || TCs_.CROP_YIELD_2;
+        var area = opt_area || TCs_.AREA;
+        return createScenarioDatumVerbatim_(yield1, yield2, area);
+      }
+
+
+      function createScenarioDatumVerbatim_(yield1, yield2, area, opt_mgmt) {
+        var cropdatum1 = createCropDatum_(yield1, opt_mgmt);
+        var cropdatum2 = createCropDatum_(yield2, opt_mgmt);
+        return new monsoon.alpha.gli.ScenarioDatum(
+            TCs_.LOCATION, area, cropdatum1, cropdatum2, TCs_.MODEL_BIAS);
+      }
+
+
+      function testScenarioDatum() {
+        var testObj = createScenarioDatum_();
+        assertEquals(
+            'getLocation() failed',
+            TCs_.LOCATION,
+            testObj.getLocation());
+        assertEquals('getArea() failed', TCs_.AREA, testObj.getArea());
+        assertEquals(
+            'getCurYield() failed',
+            TCs_.CROP_YIELD_1,
+            testObj.getBaseCropDatum().getYield());
+        assertEquals(
+            'getNewYield() failed',
+            TCs_.CROP_YIELD_2,
+            testObj.getScenarioCropDatum().getYield());
+        assertEquals(
+            'getYieldDelta() failed',
+            TCs_.CROP_YIELD_2 - TCs_.CROP_YIELD_1,
+            testObj.getYieldDelta());
+        var curProduction = TCs_.CROP_YIELD_1 * TCs_.AREA;
+        var newProduction = TCs_.CROP_YIELD_2 * TCs_.AREA;
+        assertEquals(
+            'getProductionDelta() failed',
+            newProduction - curProduction,
+            testObj.getProductionDelta());
+      }
+
+
+      function testMgmtComponentLookup() {
+        var n = monsoon.alpha.gli.MgmtInputs.MgmtComponent.N;
+        var vector = MGMT_INPUTS_;
+        var testObj = new monsoon.alpha.gli.ScenarioDatum();
+        assertEquals(
+            MGMT_INPUTS_.getNitrogen(),
+            testObj.mgmtComponentLookup_(n, vector));
+        var i = monsoon.alpha.gli.MgmtInputs.MgmtComponent.I;
+        assertEquals(
+            MGMT_INPUTS_.getIrrigation(),
+            testObj.mgmtComponentLookup_(i, vector));
+      }
+
+
+      function testMgmtComponentLookupBadName() {
+        var vector = MGMT_INPUTS_;
+        var testObj = new monsoon.alpha.gli.ScenarioDatum();
+        try {
+          testObj.mgmtComponentLookup_('bad_name', vector);
+          fail('Expected error was not thrown!');
+        } catch (e) {
+          // expected case
+        }
+      }
+
+
+      function testMgmtComponentLookupUndefineValue() {
+        var n = monsoon.alpha.gli.MgmtInputs.MgmtComponent.N;
+        var vector = new monsoon.alpha.gli.MgmtInputs([]);
+        var testObj = new monsoon.alpha.gli.ScenarioDatum();
+        assertNull(testObj.mgmtComponentLookup_(n, vector));
+      }
+
+
+      function testMgmtComponentLookupNullValue() {
+        var i = monsoon.alpha.gli.MgmtInputs.MgmtComponent.I;
+        var vector = MGMT_INPUTS_INCOMPLETE_I_;
+        var testObj = new monsoon.alpha.gli.ScenarioDatum();
+        assertNull(testObj.mgmtComponentLookup_(i, vector));
+      }
+
+
+      function testScenarioAggregateSingleInput() {
+        var scenarioYieldObjects = [createScenarioDatum_()];
+        var testObj = new monsoon.alpha.gli.ScenarioAggregate(
+            scenarioYieldObjects, MODEL_STATE_HASDATA_);
+        assertEquals(TCs_.CROP_YIELD_1, testObj.getBaseYieldAverage());
+        assertEquals(TCs_.CROP_YIELD_2, testObj.getScenarioYieldAverage());
+        assertEquals(
+            TCs_.CROP_YIELD_2 - TCs_.CROP_YIELD_1,
+            testObj.getAverageYieldChange());
+        assertEquals(TCs_.AREA, testObj.getAreaAverage());
+        assertEquals(
+            TCs_.AREA * TCs_.CROP_YIELD_2,
+            testObj.getScenarioProductionTotal());
+        var yieldDelta = TCs_.CROP_YIELD_2 - TCs_.CROP_YIELD_1;
+        assertEquals(
+            TCs_.AREA * yieldDelta,
+            testObj.getProductionChange());
+        assertEquals(
+            TCs_.CROP_YIELD_2 > TCs_.CROP_YIELD_1 ? 1 : 0,
+            testObj.getIncreasingCount());
+        assertEquals(
+            TCs_.CROP_YIELD_1 > TCs_.CROP_YIELD_2 ? 1 : 0,
+            testObj.getDecreasingCount());
+        assertEquals(
+            yieldDelta > 0 ? yieldDelta : null,
+            testObj.getAverageIncrease());
+        assertEquals(
+            yieldDelta < 0 ? yieldDelta : null,
+            testObj.getAverageDecrease());
+        assertEquals(0, testObj.getIncompleteDataCount());
+      }
+
+
+      function testScenarioAggregateEmptyInput() {
+        var testObj = new monsoon.alpha.gli.ScenarioAggregate(
+            [], MODEL_STATE_NODATA_);
+        assertEquals(null, testObj.getBaseYieldAverage());
+        assertEquals(null, testObj.getScenarioYieldAverage());
+        assertEquals(null, testObj.getAverageYieldChange());
+        assertEquals(null, testObj.getAreaAverage());
+        assertEquals(null, testObj.getScenarioProductionTotal());
+        assertEquals(null, testObj.getProductionChange());
+        assertEquals(null, testObj.getIncreasingCount());
+        assertEquals(null, testObj.getDecreasingCount());
+        assertEquals(null, testObj.getAverageIncrease());
+        assertEquals(null, testObj.getAverageDecrease());
+        assertEquals(0, testObj.getIncompleteDataCount());
+      }
+
+
+      function testScenarioAggregateDoubleDroppingInputs() {
+        var droppingYield1 = createScenarioDatum_(
+            TCs_.CROP_YIELD_2, TCs_.CROP_YIELD_1, TCs_.AREA);
+        var droppingYield2 = createScenarioDatum_(
+            TCs_.CROP_YIELD_2, TCs_.CROP_YIELD_1, TCs_.AREA * 2);
+
+        var scenarioYieldObjects = [droppingYield1, droppingYield2];
+        var testObj = new monsoon.alpha.gli.ScenarioAggregate(
+            scenarioYieldObjects, MODEL_STATE_HASDATA_);
+        assertEquals(TCs_.CROP_YIELD_2, testObj.getBaseYieldAverage());
+        assertEquals(TCs_.CROP_YIELD_1, testObj.getScenarioYieldAverage());
+        assertEquals(
+            TCs_.CROP_YIELD_1 - TCs_.CROP_YIELD_2,
+            testObj.getAverageYieldChange());
+        assertEquals(
+            (TCs_.AREA + TCs_.AREA * 2) / 2,
+            testObj.getAreaAverage());
+        assertEquals(
+            TCs_.AREA * 3 * TCs_.CROP_YIELD_1,
+            testObj.getScenarioProductionTotal());
+        var yieldDelta = TCs_.CROP_YIELD_1 - TCs_.CROP_YIELD_2;
+        assertRoughlyEquals(
+            yieldDelta * TCs_.AREA * 3,
+            testObj.getProductionChange(),
+            TCs_.DOUBLE_TOLERANCE);
+        assertEquals(
+            'getAverageIncrease() failed.',
+            TCs_.CROP_YIELD_1 > TCs_.CROP_YIELD_2 ? 2 : 0,
+            testObj.getIncreasingCount());
+        assertEquals(
+            'getAverageIncrease() failed.',
+            TCs_.CROP_YIELD_2 > TCs_.CROP_YIELD_1 ? 2 : 0,
+            testObj.getDecreasingCount());
+        assertEquals(
+            'getAverageIncrease() failed.',
+            yieldDelta > 0 ? yieldDelta : null,
+            testObj.getAverageIncrease());
+        assertEquals(
+            'getAverageDecrease() failed.',
+            yieldDelta < 0 ? yieldDelta : null,
+            testObj.getAverageDecrease());
+        assertEquals(0, testObj.getIncompleteDataCount());
+      }
+
+
+      /**
+       * Sets up a {@code ScenarioAggrgate} from various inputs.
+       * @param {?number} yield1 The yield for the first scenario datum.
+       * @param {?number} area1 The area for the first scenario datum.
+       * @param {?number} yield2 The yield for the second scenario datum.
+       * @param {?number} area2 The area for the second scenario datum.
+       * @param {!monsoon.alpha.gli.MgmtInputs=} opt_mgmt Optional management
+       *     inputs to apply to all scenario datum objects created.
+       * @return {!monsoon.alpha.gli.ScenarioAggregate} The created scenario
+       *     aggregate object.
+       */
+      function setUpScenarioAggreateFromInputs_(
+          yield1, area1, yield2, area2, opt_mgmt) {
+        var ccy1 = createScenarioDatumVerbatim_(
+            yield1, yield1, area1, opt_mgmt);
+        var ccy2 = createScenarioDatumVerbatim_(
+            yield2, yield2, area2, opt_mgmt);
+        var scenarioYieldObjects = [ccy1, ccy2];
+        return new monsoon.alpha.gli.ScenarioAggregate(
+            scenarioYieldObjects, MODEL_STATE_HASDATA_);
+      }
+
+
+      function testGetIncompleteDataCountNormalCase() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, TCs_.CROP_YIELD_2, TCs_.AREA);
+        assertEquals(0, testObj.getIncompleteDataCount());
+      }
+
+
+      function testGetIncompleteDataCountMissingArea() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, null, TCs_.CROP_YIELD_2, TCs_.AREA);
+        assertEquals(1, testObj.getIncompleteDataCount());
+      }
+
+      function testGetIncompleteDataCountMissingArea2() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, TCs_.CROP_YIELD_2, null);
+        assertEquals(1, testObj.getIncompleteDataCount());
+      }
+
+      function testGetIncompleteDataCountMissingYield() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            null, TCs_.AREA, TCs_.CROP_YIELD_2, TCs_.AREA);
+        assertEquals(1, testObj.getIncompleteDataCount());
+      }
+
+
+      function testGetIncompleteDataCountMissingYield2() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, null, TCs_.AREA);
+        assertEquals(1, testObj.getIncompleteDataCount());
+      }
+
+
+      function testGetIncompleteDataCountMissingFertilizer() {
+        var mgmt = MGMT_INPUTS_INCOMPLETE_;
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, TCs_.CROP_YIELD_2, TCs_.AREA, mgmt);
+        assertEquals(2, testObj.getIncompleteDataCount());
+      }
+
+
+      function testGetIncompleteDataCountMissingIrrigation() {
+        var mgmt = MGMT_INPUTS_INCOMPLETE_I_;
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, TCs_.CROP_YIELD_2, TCs_.AREA, mgmt);
+        assertEquals(2, testObj.getIncompleteDataCount());
+      }
+
+
+      function testGetIncompleteDataCountAllGood() {
+        var testObj = setUpScenarioAggreateFromInputs_(
+            TCs_.CROP_YIELD_1, TCs_.AREA, TCs_.CROP_YIELD_2, TCs_.AREA);
+        assertEquals(0, testObj.getIncompleteDataCount());
+      }
+    </script>
+  </body>
+</html>

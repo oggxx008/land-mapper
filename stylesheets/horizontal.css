@@ -1,0 +1,34 @@
+.jcarousel-skin-default .jcarousel {
+    position: relative;
+    overflow: hidden;
+    margin-left: 2%;
+    margin-right: 2%;
+    width: 96%;
+    height: 180px;
+    border: 0px solid #000;
+}
+
+.jcarousel-skin-default ul {
+    width: 20000px;
+    position: absolute;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jcarousel-skin-default li {
+    float: left;
+    margin:  5px 5px 5px 0;
+    padding: 0;
+}
+
+*[dir=rtl] .jcarousel-skin-default li {
+    float: right;
+    margin: 0 0 0 10px;
+}
+
+/** Custom **/
+
+.jcarousel-skin-default li img {
+    border: 1px soild #006;
+}

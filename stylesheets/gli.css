@@ -1,0 +1,553 @@
+/**
+ * Copyright 2011 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* STRUCTURAL */
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+  min-width: 700px;  /* sidebar-left.width x 2 + sidebar-right.width */
+  font: 83%/140% arial;
+  background: #ffffff;
+  padding: 0;
+  margin: 0;
+}
+
+label {
+  display: block;
+}
+
+/* Parent DIV that holds entire page content as children. */
+.container {
+  height: 100%;
+  top: 0%;
+  overflow: hidden;
+}
+
+.header {
+  height: 50px;
+  width: 70%;
+  background: #7a0019;
+  color: #ffcc33;  
+  position: absolute;
+  text-align: left;
+  top: 4px;
+  left: 5%;
+  padding: 0;
+  z-index: 1;
+}
+
+.gli-main-header {
+	position: relative;
+	top: 0px;
+	font-size: 18px;
+	width: 50%;
+	left: 1%;
+	line-height: 50px;
+	vertical-align: middle;
+}
+
+.maplocsearch {
+    width: 16%;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+	 right: 34%;
+    z-index: 1;
+}
+
+.footer {
+  width: 100%;
+  background: #ffffff;
+  padding: 0;
+  position: absolute;
+  bottom: 0;
+}
+
+/* Parent DIV that holds the multiple columns of our layout as children. */
+.columns {
+  height: 100%;
+  padding-left: 320px;  /* sidebar-left.width */
+  padding-right: 390px;  /* sidebar-right.width */
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+div.startTxtContainer {
+	position: fixed;
+	width: 100%;
+	height: 30%	
+	display: block;
+	top: 40%;
+	vertical-align: middle; 
+}
+
+#startTxtParagraph {
+	text-align: center;
+	font-size: 200%;
+}
+
+.map_snapshot {
+	height: 180px;
+	width: 180px;
+	top: 0;
+	left: 0;
+	position: relative;
+}
+
+.mssdiv {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+  position: absolute;
+  z-index: 0;
+}
+
+.accordionItem {
+height: 82%;
+}
+
+#OutputPanelHolderContainer {
+  height: 85%;
+  width: 300px;
+  top: 50px;
+  right: 0px;
+  display: none;
+  background-color: #ffffff;
+  background-attachment: fixed;
+  opacity: 0.8;
+  overflow: auto;
+  position: absolute;
+  z-index: 1;  
+}
+
+#OutputPanelHolder {
+  height: 90%;
+  bottom: 1px;
+}
+
+#InputPanelHolderContainer {
+  height: 85%;
+  width: 300px;
+  top: 80px;
+  left: 0px;
+  display: none;
+  background-color: #ffffff;
+  background-attachment: fixed;
+  opacity: 0.8;
+  overflow: auto;
+  margin-right: 300px;  /* sidebar-right.width */
+  position: absolute;
+  z-index: 1;  
+}
+
+#InputPanelHolder {
+  height: 95%;
+  right: 21px;
+  bottom: 21px;
+}
+
+#InputPanelHideShow {
+  height: 30px;
+  width: 30px;
+  top: 50px;
+  left: 0px;
+  position: absolute;
+  font-size: 36;
+  z-index: 1;  
+}
+
+p.showHideSymbol {
+	font-size: 24;
+}
+
+#scenarioPanelVertical {
+   position:fixed;
+   bottom:0px;
+   width:60%; 
+	left: 20%;
+	right: 20%;
+	display : block; /* block none*/
+	visibility: visible;
+	z-index: 1;
+}
+
+#scenarioPanelHorizontal {
+  height: 190px;
+  width: 96%;
+  bottom: 0px;
+  left: 2%;
+  right: 2%;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  background: #6666ff;
+  opacity: 0.95;
+  overflow: auto;
+  text-align: center;
+  z-index: 1;  
+}
+
+
+#scenarioPanelVerticalB {
+   position:fixed;
+   bottom:183px;
+   width:60%; 
+	left: 20%;
+	right: 20%;
+	display : block; /* block none*/
+	visibility: visible;
+	z-index: 1;
+}
+
+#scenarioPanelHorizontalB {
+  height: 190px;
+  width: 96%;
+  bottom: 0px;
+  left: 2%;
+  right: 2%;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  background: #6666ff;
+  opacity: 0.95;
+  overflow: auto;
+  text-align: center;
+  z-index: 1;  
+}
+
+a.scrHide {
+    position: absolute;
+    right: 4%; 
+    top: 8px;
+    /*width: 30px;
+    height: 30px;
+    background: url('hide_small.png') no-repeat scroll 0px 0px transparent;*/
+    cursor: pointer;
+}	
+
+a.scrHide:link {text-decoration: none}
+a.scrHide:visited {text-decoration: none}
+a.scrHide:active {text-decoration: none}
+a.scrHide:hover {font-size:140%; font-weight:bold; color: darkblue;}   
+
+a#scrShow {
+    position: absolute;
+    right: 20%; 
+    bottom: 3px;
+    /*width: 30px;
+    height: 30px;
+    background: url('hide_small.png') no-repeat scroll 0px 0px transparent;*/
+    cursor: pointer;
+    z-index: 2;
+}	
+
+a#scrShowB {
+    position: absolute;
+    right: 20%; 
+    bottom: 23px;
+    /*width: 30px;
+    height: 30px;
+    background: url('hide_small.png') no-repeat scroll 0px 0px transparent;*/
+    cursor: pointer;
+    z-index: 2;
+}	
+
+
+a.scrShow:link {text-decoration: none}
+a.scrShow:visited {text-decoration: none}
+a.scrShow:active {text-decoration: none}
+a.scrShow:hover {font-size:140%; font-weight:bold; color: darkblue;}   
+
+
+a.scrArrAbsRight:hover {
+    background: url('news_arr_r_h.png') no-repeat scroll 0px 0px transparent;
+}
+
+a.scrArrAbsRight {
+    position: absolute;
+    right: 4%; 
+    top: 40%;
+    width: 31px;
+    height: 41px;
+    background: url('news_arr_r.png') no-repeat scroll 0px 0px transparent;
+    cursor: pointer;
+}
+
+a.scrArrAbsLeft:hover {
+    background: url('news_arr_l_h.png') no-repeat scroll 0px 0px transparent;
+}
+
+a.scrArrAbsLeft {
+    position: absolute;
+    left: 0%;
+    top: 40%;
+    width: 31px;
+    height: 41px;
+    background: url('news_arr_l.png') no-repeat scroll 0px 0px transparent;
+    cursor: pointer;
+}
+
+.app_menu {
+  background-color: #CCFFFF;
+  padding: 5px;
+}
+
+.app_menu_bar {
+  float: right;
+  font-weight: bold;
+}
+
+.content {
+  width: 100%;
+  height: 75%;
+  font-size: 1.0em;
+  padding: 0.0em;
+}
+
+/* overrides to closure ui element css. */
+.goog-menu-button {
+  position: relative;
+}
+
+.goog-menu-button-dropdown {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+
+/* TYPE STYLES ETC. */
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin-top: 0;
+}
+h1 {
+}
+h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+
+#map_debug {
+  font-size: 80%;
+}
+
+#map_canvas {
+  height: 100%;
+  width: 100%;
+}
+
+#center_tile_debug {
+  font-size: 80%;
+  color: blue;
+  font-weight: bold;
+}
+
+#search_location {
+    outline: blue;
+}
+
+/* SLIDER (not used yet) */
+
+.goog-slider {
+  width: 200px;
+  height: 20px;
+}
+
+.goog-slider-horizontal {
+  width: 200px;
+  height: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.goog-slider-thumb {
+  position: absolute;
+  background-color: black;
+  overflow: hidden;
+}
+
+.goog-slider-background {
+  position: absolute;
+  width: 100%;
+  top: 9px;
+  border: 1px inset white;
+  overflow: hidden;
+  height: 0;
+}
+
+.goog-slider-horizontal .goog-slider-thumb {
+  top: 0;
+  width: 20px;
+  height: 100%;
+}
+
+.hide {
+  visibility: hidden;
+}
+
+.show {
+  visibility: inherit;
+}
+
+#zoom_note {
+  position: absolute;
+  top: 80px;
+  left: 180px;
+  z-index: 100;
+  background: yellow;
+}
+
+#message {
+  position: absolute;
+  top: 180px;
+  left: 80px;
+  z-index: 100;
+  background: orange;
+  font-size: 14pt;
+}
+
+.map-tooltip {
+	background-color:#FFF;
+	border:1px solid #FFF;
+	box-shadow:0 0 5px rgba(0,0,0,0.5);
+	-moz-box-shadow:0 0 5px rgba(0,0,0,0.5);
+	-webkit-box-shadow:0 0 5px rgba(0,0,0,0.5);
+	margin:0;
+	padding:0;
+	position:absolute;
+	text-align:left;
+	width:290px;
+	z-index:750;
+}
+
+.map-tooltip-tail {
+	background:url("tooltip-tail.png") no-repeat 0 bottom;
+	bottom:-18px;
+	display:block;
+	height:13px;
+	position:absolute;
+	width:42px;
+}
+.map-tooltip-content {
+	padding:0;
+}
+.map-tooltip-content h4 {
+	background-color:#ccc;
+	font:11px Arial,sans-serif;
+	margin:0;
+	padding:2px 5px;
+	text-transform:uppercase;
+}
+.map-tooltip-content p {
+	font:11px Arial,sans-serif;
+	margin:0;
+	padding:5px;
+}
+
+.goog-menu {
+  background: #fff;
+  border-color: #ccc #666 #666 #ccc;
+  border-style: solid;
+  border-width: 1px;
+  cursor: default;
+  font: normal 13px Arial, sans-serif;
+  margin: 0;
+  outline: none;
+  padding: 4px 0;
+  position: absolute;
+  z-index: 20000; /* Arbitrary, but some apps depend on it... */
+}
+
+.goog-menuitem {
+  color: #000;
+  font: normal 13px Arial, sans-serif;
+  list-style: none;
+  margin: 0;
+  /* 28px on the left for icon or checkbox; 7em on the right for shortcut. */
+  padding: 4px 7em 4px 28px;
+  white-space: nowrap;
+}
+
+.goog-menuseparator {
+  border-top: 1px solid #ccc;
+  margin: 4px 0;
+  padding: 0;
+}
+
+/* Overwrite the default jQuery css to avoid unnecessary scroll bars on both sides */
+.ui-resizable-s {
+    bottom: 1px;
+    cursor: s-resize;
+    height: 7px;
+    left: 0;
+    width: 100%;
+}
+
+.ui-resizable-e {
+    cursor: e-resize;
+    height: 100%;
+    right: 1px;
+    top: 0;
+    width: 7px;
+}
+
+/* Increase the size of the "capturing area" and add a background icon using css3 */
+.ui-resizable-sw {
+    bottom: 1px;
+    cursor: sw-resize;
+    height: 16px;
+    left: 1px;
+    width: 16px;
+    background-position: -64px -224px;
+    background-image: url("http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/base/images/ui-icons_222222_256x240.png");
+   	-webkit-transform: rotate(90deg);
+	-moz-transform: rotate(90deg);
+	-ms-transform: rotate(90deg);
+	-o-transform: rotate(90deg);
+	transform: rotate(90deg);
+    
+}
+
+.ui-accordion .ui-accordion-content {
+    border-top: 0 none;
+    overflow: auto;
+    padding: 0.5em 0.5em;
+}
+

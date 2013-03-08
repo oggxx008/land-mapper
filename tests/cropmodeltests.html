@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript"
+            src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/js/util.js"></script>
+    <script type="text/javascript" src="/js/layers.js"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <script type="text/javascript" src="/js/croputils.js"></script>
+    <script type="text/javascript" src="/js/cropdatum.js"></script>
+    <script type="text/javascript" src="/js/dbbridge.js"></script>
+    <script type="text/javascript" src="/js/datamodel.js"></script>
+    <script type="text/javascript" src="/js/cropmodel.js"></script>
+    <title>Tests for js/cropmodel.js</title>
+  </head>
+
+  <body>
+    <script type="text/javascript">
+
+    goog.require('goog.testing');
+    goog.require('monsoon.maps.DbBridge');
+    goog.require('monsoon.maps.MapLayer');
+
+
+    /**
+     * Tests the {@link monsoon.alpha.gli.CropModel} class.
+     */
+
+
+    /**
+     * Test data.
+     * @private
+     */
+    var Td_ = {
+      SOME_NUMBER: 2,
+      ANOTHER_NUMBER: 33,
+      BIG_NUMBER: 1000,
+      SOME_CROP: 'wheat',
+      CROP_WITH_NPKI: 'maize',
+      CROP_GDD_BASE: 8,
+      BIN_11: 11,
+      BIN_12: 12,
+      BIN_21: 21,
+      POT_11: 5,
+      POT_12: 6,
+      POT_21: 7,
+      GDD_1: 6000,
+      GDD_2: 7000,
+      GDD_3: 8000,
+      PRECIP_1: 1000,
+      PRECIP_2: 2000,
+      PRECIP_3: 3000,
+      SOME_LAT: 38,
+      SOME_LNG: -122
+    };
+
+
+    function setUpTestObj(layerData) {
+      var replaceFunction = function() {};
+      // We never initialize this test data model, so we should never call
+      // the bridge, but supplying a mock helps guarantee we never hit the DB.
+      var dbBridge = new goog.testing.Mock(monsoon.maps.DbBridge);
+      dbBridge.$replay();
+      var dataModel = new monsoon.alpha.gli.DataModel(
+          replaceFunction, dbBridge);
+      var layers = dataModel.getLayers();
+      for (var layerName in layerData) {
+        var layer = new monsoon.maps.MapLayer();
+        layers[layerName] = layer;
+        var layerValue = layerData[layerName];
+        var tile = new monsoon.maps.Tile(
+            Td_.SOME_LAT, Td_.SOME_LNG, layerValue);
+        layer.setTile(tile);
+      }
+      dataModel.setClimateBins([
+          // a base bin
+          [Td_.BIN_11,
+              Td_.GDD_1,
+              Td_.GDD_2,
+              Td_.PRECIP_1,
+              Td_.PRECIP_2,
+              Td_.POT_11,
+              Td_.SOME_CROP],
+          // a wetter bin
+          [Td_.BIN_12,
+              Td_.GDD_1,
+              Td_.GDD_2,
+              Td_.PRECIP_2,
+              Td_.PRECIP_3,
+              Td_.POT_12,
+              Td_.SOME_CROP],
+          // a hotter bin
+          [Td_.BIN_21,
+              Td_.GDD_2,
+              Td_.GDD_3,
+              Td_.PRECIP_1,
+              Td_.PRECIP_2,
+              Td_.POT_21,
+              Td_.SOME_CROP]
+      ]);
+      var testObj = new monsoon.alpha.gli.CropModel(dataModel);
+      var controlValues = new monsoon.alpha.gli.ModelControls(
+          Td_.SOME_CROP, 0, 0);
+      testObj.modelControls_ = controlValues;
+      testObj.modelState_ = new monsoon.alpha.gli.ModelState(
+          false, false, false);
+      return testObj;
+    }
+
+
+    function testComputeScenarioDatum() {
+      var layerNames = monsoon.alpha.gli.CropModel.LayerNames;
+      var layerData = {};
+      layerData[layerNames.YIELD] = 1;
+      layerData[layerNames.AREA] = 2;
+      layerData[layerNames.PRECIP] = Td_.PRECIP_1;
+      layerData[layerNames.BASE_GDD] = Td_.GDD_1;
+      layerData[layerNames.SCENARIO_GDD] = Td_.GDD_2;
+      var testObj = setUpTestObj(layerData);
+      var location = new google.maps.LatLng(Td_.SOME_LAT, Td_.SOME_LNG);
+      var result = testObj.computeScenarioDatum(location);
+      assertEquals(1, result.getBaseCropDatum().getYield());
+    }
+
+
+    /**
+     * Tests for the {@link monsoon.alpha.gli.ModelControls} container class.
+     */
+    function testModelControls() {
+      // This just checks the constructor param order and construction.
+      var temperatureChange = 2;
+      var precipitationChange = 33;
+      var sampleModelControls = new monsoon.alpha.gli.ModelControls(
+          Td_.SOME_CROP, precipitationChange, temperatureChange);
+      assertEquals(Td_.SOME_CROP, sampleModelControls.crop);
+      assertEquals(temperatureChange, sampleModelControls.tempChange);
+      assertEquals(precipitationChange, sampleModelControls.precipChange);
+    }
+
+
+    function testReplaceNPKILayers() {
+      var testObj = setUpTestObj({});
+      var layerNames = ['layer1', 'layer2', 'layer3', 'layer4'];
+      var cropInfo = testObj.getDataModel().getCropInfo(Td_.CROP_WITH_NPKI);
+      testObj.replaceNPKILayers_(layerNames, cropInfo);
+      var layer1 = testObj.getDataModel().getLayer('layer1');
+      assertEquals(cropInfo.getTableName(), layer1.getTable());
+      var n = monsoon.alpha.gli.MgmtInputs.MgmtComponent.N;
+      assertEquals(cropInfo.getFieldName(n), layer1.getField());
+    }
+
+
+    function testReplaceNPKILayer() {
+      var testObj = setUpTestObj({});
+      var name = 'some_layer';
+      testObj.replaceNPKILayer_(name, 'some_table', 'some_field');
+      var layer = testObj.getDataModel().getLayer(name);
+      assertNotNull(layer);
+      assertEquals('some_table', layer.getTable());
+      assertEquals('some_field', layer.getField());
+    }
+
+
+    function testReplaceNPKILayerNoFieldName() {
+      var testObj = setUpTestObj({});
+      var name = 'some_layer';
+      testObj.replaceNPKILayer_(name, 'some_table', '');
+      assertNull(testObj.getDataModel().getLayer(name));
+    }
+
+
+    function testReplaceNPKILayerNoTableName() {
+      var testObj = setUpTestObj({});
+      var name = 'some_layer';
+      testObj.replaceNPKILayer_(name, '', 'some_field');
+      assertNull(testObj.getDataModel().getLayer(name));
+    }
+    </script>
+  </body>
+</html>

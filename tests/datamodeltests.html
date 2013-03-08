@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript"
+            src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/js/util.js"></script>
+    <script type="text/javascript" src="/js/layers.js"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <script type="text/javascript" src="/js/croputils.js"></script>
+    <script type="text/javascript" src="/js/dbbridge.js"></script>
+    <script type="text/javascript" src="/js/cropdatum.js"></script>
+    <script type="text/javascript" src="/js/datamodel.js"></script>
+    <script type="text/javascript" src="/js/cropmodel.js"></script>
+    <title>Tests for js/gli.js</title>
+  </head>
+
+  <body>
+    <script type="text/javascript">
+
+    goog.require('goog.net.XhrIo');
+    goog.require('goog.testing');
+    goog.require('goog.testing.net.XhrIo');
+    goog.require('monsoon.alpha.gli.CropInfo');
+    goog.require('monsoon.alpha.gli.DataModel');
+    goog.require('monsoon.alpha.gli.ModelControls');
+    goog.require('monsoon.maps.DbBridge');
+    goog.require('monsoon.maps.MapLayer');
+
+
+    /**
+     * Tests the {@link monsoon.alpha.gli.DataModel} class, and the
+     * {@link monsoon.alpha.gli.CropInfo} helper class.
+     */
+
+
+    /**
+     * A sample payload to return.
+     * @private
+     */
+    var TEST_PAYLOAD_ = [
+      [37.625, -121.4583, 11.22821],
+      [37.625, -121.5417, 11.30386]];
+
+    var TestData_ = {
+      SOME_NUMBER: 2,
+      ANOTHER_NUMBER: 33,
+      BIG_NUMBER: 1000,
+      SOME_CROP: 'some_crop',
+      REAL_CROP: 'rice',
+      SOME_CROP_ID: 'some_crop_Id',
+      MOCK_DB_RESPONSE: {status: 'OK', payload: TEST_PAYLOAD_},
+      SOME_LAT: 38,
+      SOME_LNG: -122
+    };
+
+
+    /**
+     * Tracks old layers passed in to our {@code replaceMapLayerMonitor_}
+     * function.
+     * @type {Array.<monsoon.maps.MapLayer>}
+     * @private
+     */
+    var oldLayers_ = null;
+
+
+    /**
+     * Tracks old layers passed in to our {@code replaceMapLayerMonitor_}
+     * function.
+     * @type {Array.<monsoon.maps.MapLayer>}
+     * @private
+     */
+    var newLayers_ = null;
+
+    /**
+     * A mock db bridge to use.
+     * @type {goog.testing.Mock.<monsoon.maps.DbBridge>}
+     * @private
+     */
+    var mockDbBridge_ = null;
+
+
+    /**
+     * Tracks layers passed in to the {@code replaceMapLayerFunction}
+     * function used by our test object.
+     * @param {monsoon.maps.MapLayer} oldLayer The layer to replace.
+     * @param {monsoon.maps.MapLayer} newLayer The new layer to use.
+     * @type {function(monsoon.maps.MapLayer, monsoon.maps.MapLayer)}
+     * @private
+     */
+    var replaceMapLayerMonitor_ = function(oldLayer, newLayer) {
+      oldLayers_.push(oldLayer);
+      newLayers_.push(newLayer);
+    };
+
+
+    /**
+     * Returns a simple test object, using the {@link #replaceMapLayerMonitor_}
+     * replacement function to monitor function calls to the replacement
+     * function.
+     * @param {monsoon.maps.DbBridge=} opt_dbBridge Optional db bridge to use.
+     * @return {!monsoon.alpha.gli.DataModel} The data model to test.
+     * @private
+     */
+    function simpleTestObject_(opt_dbBridge) {
+      oldLayers_ = [];
+      newLayers_ = [];
+      var dbBridge = opt_dbBridge || setUpMockDbBridge_();
+      return new monsoon.alpha.gli.DataModel(
+          replaceMapLayerMonitor_, dbBridge);
+    }
+
+
+    /**
+     * Sets up {@code mockDbBridge_} for testing.
+     * @return {goog.testing.Mock.<monsoon.maps.DbBridge>} The set up mock.
+     * @private
+     */
+    function setUpMockDbBridge_() {
+      mockDbBridge_ = new goog.testing.Mock(monsoon.maps.DbBridge);
+      mockDbBridge_.requestColumnData()
+          .$returns(TestData_.MOCK_DB_RESPONSE)
+          .$atLeastOnce();
+      mockDbBridge_.$replay();
+      return mockDbBridge_;
+    }
+
+
+    /**
+     * Tests the {@link monsoon.alpha.gli.DataModel.requestInitialData_} method
+     * by using a live object with a test version of {@link monsoon.net.XhrIo}.
+     */
+    function testRequestInitialData() {
+      var mockDbBridge = new goog.testing.Mock(monsoon.maps.DbBridge);
+      mockDbBridge.requestColumnData()
+          .$returns(TestData_.MOCK_DB_RESPONSE)
+          .$atLeastOnce();
+      mockDbBridge.$replay();
+      var testObj = simpleTestObject_(mockDbBridge);
+      testObj.requestInitialData_();
+      mockDbBridge.$verify();
+      assertNotNull(testObj.climateBins_);
+    }
+
+
+    // TODO: add a test to buildCropTable once that function
+    // actually dynamically builds the table.
+
+
+    function testReplaceLayer() {
+      var layerName = 'SOME_LAYER';
+      var oldLayer = new monsoon.maps.MapLayer();
+      var newLayer = new monsoon.maps.MapLayer(
+          'table', 'field', monsoon.maps.MapLayer.Display.GRID);
+      var testObj = simpleTestObject_();
+      testObj.getLayers()[layerName] = oldLayer;
+      testObj.replaceLayer(layerName, newLayer);
+      assertEquals('oldLayers length', 1, oldLayers_.length);
+      assertObjectEquals('oldLayer', oldLayer, oldLayers_[0]);
+      assertEquals('newLayers length', 1, newLayers_.length);
+      assertObjectEquals('newLayer', newLayer, newLayers_[0]);
+    }
+
+
+    function testDataModel() {
+      // A simple end-to-end test of the data model.
+      var layerName = 'SOME_LAYER';
+      var layerReplacerThatSetsUpOneTile = function(oldLayer, newLayer) {
+        var tile = new monsoon.maps.Tile(
+            TestData_.SOME_LAT, TestData_.SOME_LNG, TestData_.SOME_NUMBER);
+        newLayer.setTile(tile);
+      }
+      var testLayer = new monsoon.maps.MapLayer();
+      var testObj = new monsoon.alpha.gli.DataModel(
+          layerReplacerThatSetsUpOneTile, setUpMockDbBridge_());
+      testObj.replaceLayer(layerName, testLayer);
+      var location = new google.maps.LatLng(
+          TestData_.SOME_LAT, TestData_.SOME_LNG);
+      assertEquals(
+          TestData_.SOME_NUMBER,
+          testObj.getLayerValue(location, layerName));
+    }
+
+
+    function setUpModelControls_() {
+      return new monsoon.alpha.gli.ModelControls(
+          TestData_.REAL_CROP,
+          TestData_.ANOTHER_NUMBER,  // precip change typically > temp change
+          TestData_.SOME_NUMBER);
+    }
+
+
+    function testCheckScenarioSanity() {
+      var testObj = simpleTestObject_();
+      var controls = setUpModelControls_();
+      assertNull(testObj.checkScenarioSanity(controls));
+    }
+
+
+    function testCheckScenarioSanityBadTemp() {
+      var testObj = simpleTestObject_();
+      var controls = setUpModelControls_();
+      controls.tempChange = Number.NaN;
+      assertNotNull(testObj.checkScenarioSanity(controls));
+    }
+
+
+    function testCheckScenarioSanityBadPrecip() {
+      var testObj = simpleTestObject_();
+      var controls = setUpModelControls_();
+      controls.precipChange = Number.NaN;
+      assertNotNull(testObj.checkScenarioSanity(controls));
+    }
+
+
+    function testCheckScenarioSanityBadTempRange() {
+      var testObj = simpleTestObject_();
+      var controls = setUpModelControls_();
+      controls.tempChange = TestData_.BIG_NUMBER;
+      assertNotNull(testObj.checkScenarioSanity(controls));
+    }
+
+
+    function callFindClimateBin_(gdd, precip, opt_crop) {
+      var testObj = simpleTestObject_();
+      var crop = opt_crop || 'wheat';
+      testObj.setClimateBins(
+          [[89, 6547.41, 8890.433, 1075.0, 1448.0, 3.345679, 'wheat']]);
+      return testObj.findClimateBin(crop, precip, gdd);
+    }
+
+
+    function testFindClimateBin() {
+      var rightBin = 89;
+      var inRangeGdd = 7000;
+      var inRangePrecip = 1200;
+      var beyondRange = 10000;
+      var belowRange = 1;
+      assertEquals(rightBin, callFindClimateBin_(inRangeGdd, inRangePrecip));
+      assertNull(
+          'gdd too small should have returned null.',
+          callFindClimateBin_(belowRange, inRangePrecip));
+      assertNull(
+          'precip too small should have returned null',
+          callFindClimateBin_(inRangeGdd, belowRange));
+      assertNull(
+          'gdd too big should have returned null.',
+          callFindClimateBin_(beyondRange, inRangePrecip));
+      assertNull(
+          'precip too big should have returned null',
+          callFindClimateBin_(inRangeGdd, beyondRange));
+      assertNull(
+          'crop mismatch should have returned null',
+          callFindClimateBin_(inRangeGdd, inRangePrecip, 'rice'));
+    }
+
+
+    function callFindPotentialYield_(bin, potYield, opt_crop) {
+      var testObj = simpleTestObject_();
+      var crop = opt_crop || 'wheat';
+      testObj.setClimateBins(
+          [[89, 6547.41, 8890.433, 1075.0, 1448.0, potYield, 'wheat']]);
+      return testObj.findPotentialYield(crop, bin);
+    }
+
+
+    function testFindPotentialYield() {
+      var potYield = 1.2345;
+      var wrongBin = 1;
+      var rightBin = 89;
+      assertEquals(potYield, callFindPotentialYield_(rightBin, potYield));
+      assertNull(callFindPotentialYield_(wrongBin, potYield));
+      assertNull(callFindPotentialYield_(rightBin, potYield, 'rice'));
+    }
+
+
+    function testCropInfo() {
+      // Simple test that the constructor can be called and holds the
+      // expected public data members.
+      var someTable = 'SOME_TABLE';
+      var someYield = 'SOME_YIELD';
+      var someArea = 'SOME_AREA';
+      var years = [2005];
+      var cropInfo = new monsoon.alpha.gli.CropInfo(
+          someTable,
+          someYield,
+          someArea,
+          TestData_.SOME_NUMBER,
+          TestData_.SOME_CROP_ID,
+          years);
+      assertEquals(someTable, cropInfo.table);
+      assertEquals(someYield, cropInfo.yieldField);
+      assertEquals(someArea, cropInfo.areaField);
+      assertEquals(TestData_.SOME_NUMBER, cropInfo.baseGdd);
+      assertEquals(TestData_.SOME_CROP_ID, cropInfo.cropId);
+      assertEquals(years, cropInfo.years);
+    }
+
+
+    function callRequestColumnData(opt_statusCode, opt_response) {
+      var table = 'someTable';
+      var fields = ['someField'];
+      var payload;
+      var assignFunction = function(responseData) {
+        payload = responseData;
+      };
+      var testObj = setUpDataModelForTest();
+      testObj.requestColumnData_(table, fields, assignFunction);
+      simulateSingleResponse(opt_statusCode, opt_response);
+      return payload;
+    }
+
+
+    function setUpDataModelForTest() {
+      var stubbedBridge = new monsoon.maps.DbBridge(goog.testing.net.XhrIo);
+      var stubCallback = function() {};
+      var dataModelForTest = new monsoon.alpha.gli.DataModel(
+          stubCallback, stubbedBridge);
+      goog.array.clear(getXhrIoTestSendInstances());
+      return dataModelForTest;
+    }
+
+
+    function getXhrIoTestSendInstances() {
+      return goog.testing.net.XhrIo.getSendInstances();
+    }
+
+
+    function simulateSingleResponse(opt_statusCode, opt_response) {
+      var statusCode = opt_statusCode || 200;
+      var response = opt_response || goog.json.serialize(
+          TestData_.MOCK_DB_RESPONSE);
+      assertEquals(1, getXhrIoTestSendInstances().length);
+      var xhrIo = getXhrIoTestSendInstances().pop();
+      xhrIo.simulateResponse(statusCode, response);
+    }
+
+
+    function testRequestColumnData() {
+      var response = goog.json.serialize(TestData_.MOCK_DB_RESPONSE);
+      var payload = callRequestColumnData(200, response);
+      assertArrayEquals(TestData_.MOCK_DB_RESPONSE['payload'], payload);
+    }
+
+
+    function testRequestColumnDataEmptyDataCase() {
+      var response = goog.json.serialize(TestData_.MOCK_DB_EMPTY_RESPONSE);
+      var payload;
+      try {
+        payload = callRequestColumnData(200, response);
+        fail('Expected error was not thrown!');
+      } catch (e) {
+        // expected case
+        assertUndefined(
+            'The assign function should not have been called!',
+            payload);
+      }
+    }
+
+
+    function testRequestColumnDataErrorCase() {
+      var response = goog.json.serialize(TestData_.MOCK_DB_ERROR_RESPONSE);
+      var payload = callRequestColumnData(404, response);
+      assertUndefined(payload);
+    }
+
+
+    function testRequestClimateDefs() {
+      var testObj = setUpDataModelForTest();
+      assertArrayEquals([], testObj.climateBins_);
+      testObj.requestClimateDefs_();
+      var response = goog.json.serialize(TestData_.MOCK_DB_RESPONSE);
+      simulateSingleResponse(200, response);
+      assertArrayEquals(TestData_.MOCK_DB_RESPONSE['payload'],
+          testObj.climateBins_);
+    }
+    </script>
+  </body>
+</html>

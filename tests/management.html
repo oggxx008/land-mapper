@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <title>Tests for js/management.js</title>
+  </head>
+
+  <body>
+
+    <script type="text/javascript">
+      goog.require('monsoon.alpha.gli.Mgmt');
+      goog.require('monsoon.alpha.gli.MgmtInputs');
+
+      // NOTE: these tests only verify some very basic calculations are
+      // being done, not that any real results are being computed.
+      // This is because the code under test is only a placeholder for
+      // real crop yield calculations.
+
+      // data for climate bin 6, as a reference to the reader
+      var bin6Data_ = {
+        pot: 9.7801,
+        min: 1.0461,
+        n: 0.013816,
+        p: 0.053006,
+        k: 0.078734,
+        i: 0.48569
+      };
+
+      var CLIMATE_BIN_ = 6;
+      var CLIMATE_BIN_W_ZERO_I_ = 51;
+
+      var MAIZE_VERY_LOW_YIELD_ = 1.0;
+      var MAIZE_LOW_YIELD_ = 2.0;
+      var MAIZE_MODERATE_YIELD_ = 4.0;
+      var MAIZE_VERY_HIGH_YIELD_ = 13.0;
+      var MAIZE_EXCESSIVE_YIELD_ = 16.0;
+
+      var SAMPLE_VECTOR_ = [1, 2, 3, 4];
+
+      // Tiny subset of the maize yield model
+      var SAMPLE_TABLE = [[
+          'climate_bin', 'gdd_min_temp_c', 'gdd_max_temp_c', 'precip_min_mm',
+          'precip_max_mm', 'potential_yield_tons_per_ha',
+          'minimum_yield_tons_per_ha', 'b_nut', 'c_N', 'c_P2O5', 'c_K2O',
+          'b_irr', 'c_irr', 'bin_rmse', 'bin_r2']];
+      SAMPLE_TABLE[CLIMATE_BIN_ + 1] = [7, 665.6033, 1570.5166, 688.0, 782.0,
+          9.7801, 1.0461, 0.89304, 0.013816, 0.053006, 0.078734, 0.1845,
+          0.48569, 1.3375, 0.68329];
+      SAMPLE_TABLE[CLIMATE_BIN_W_ZERO_I_ + 1] = [52, 2866.8396, 3448.2864,
+          519.0, 578.0, 10.0479, 1.0854, 0.89198, 0.015784, 0.011676, 0.0,
+          0.0, 0.0, 1.5749, 0.46418];
+
+
+      function testConstructor() {
+        var testObj = new monsoon.alpha.gli.MgmtInputs();
+        assertEquals(0, testObj.getNitrogen());
+        assertEquals(0, testObj.getPhosphorus());
+        assertEquals(0, testObj.getPotassium());
+        assertEquals(0, testObj.getIrrigation());
+      }
+
+
+      function testConstructorFromArray() {
+        var vector = [bin6Data_.n, bin6Data_.p, bin6Data_.k, bin6Data_.i];
+        var testObj = new monsoon.alpha.gli.MgmtInputs(vector);
+        assertObjectEquals(vector, testObj.getInputsVector());
+        assertVectorCopied_(vector, testObj.getInputsVector());
+      }
+
+
+      function assertVectorCopied_(expectedVector, actualVector) {
+        assertNotEquals(
+            'Error - constructing from another object should' +
+            'clone the inputs vector!',
+            expectedVector, actualVector);
+      }
+
+
+      function testConstructorFromObject() {
+        var expected = constructMgmtInputs();
+        var testObj = new monsoon.alpha.gli.MgmtInputs(expected);
+        assertObjectEquals(
+            expected.getInputsVector(), testObj.getInputsVector());
+        assertVectorCopied_(
+            expected.getInputsVector(), testObj.getInputsVector());
+      }
+
+
+      // Test dummy for a data model
+      function DummyDataModel() {
+        this.yieldData = SAMPLE_TABLE;
+      }
+
+
+      DummyDataModel.prototype.getYieldModelMaize = function() {
+        return this.yieldData;
+      };
+
+
+      // Static test dummy data model
+      var dummyDataModel = new DummyDataModel();
+
+
+      function constructMgmtInputs() {
+        // These inputs should give something close to the potential yield
+        // in bin 6, based on scaling factor and numbers for bin6Data.
+        return new monsoon.alpha.gli.MgmtInputs([100, 50, 7, 4]);
+      }
+
+
+      function testForwardYieldModelGoodInputs() {
+        var mgmtInputs = constructMgmtInputs();
+        var mgmt = new monsoon.alpha.gli.Mgmt(dummyDataModel);
+        var fy = mgmt.forwardYieldModel(
+            'maize', CLIMATE_BIN_W_ZERO_I_, mgmtInputs, 'unused');
+        assertTrue('moderate', fy.getModeledYield() > MAIZE_MODERATE_YIELD_);
+        assertTrue('high', fy.getModeledYield() < MAIZE_VERY_HIGH_YIELD_);
+      }
+
+
+      function callForwardYieldGivenBin(bin) {
+        var mgmtInputs = new monsoon.alpha.gli.MgmtInputs([0, 0, 0, 0]);
+        var mgmt = new monsoon.alpha.gli.Mgmt(dummyDataModel);
+        var fy = mgmt.forwardYieldModel(
+            'maize', bin, mgmtInputs, 'unused');
+        assertTrue(fy.getModeledYield() > MAIZE_VERY_LOW_YIELD_);
+        assertTrue(fy.getModeledYield() < MAIZE_LOW_YIELD_);
+        // There should be no excess when there are no inputs!
+        var excessInputs = fy.getExcess().getInputsVector();
+        for (var i = 0; i < excessInputs.length; i++) {
+          assertEquals(0, excessInputs[i]);
+        }
+      }
+
+
+      function testForwardYieldModelNoInputs() {
+        callForwardYieldGivenBin(CLIMATE_BIN_);
+      }
+
+
+      function testForwardYieldModelNoInputsNoIrrBin() {
+        callForwardYieldGivenBin(CLIMATE_BIN_W_ZERO_I_);
+      }
+
+
+      function testInverseYieldModelModestTarget() {
+        // Tests that we actually get the target yield when it's
+        // within a reasonable range.
+        var mgmtInputs = constructMgmtInputs();
+        var targetYield = MAIZE_MODERATE_YIELD_;
+        var mgmt = new monsoon.alpha.gli.Mgmt(dummyDataModel);
+        var iy = mgmt.inverseYieldModel(
+            'maize', CLIMATE_BIN_, 'good', targetYield, mgmtInputs);
+        assertEquals(targetYield, iy.getAchievedYield());
+      }
+
+
+      function testInverseYieldModelAgressiveTarget() {
+        // for now, just test that we get the hard-coded modeled yield result.
+        var mgmtInputs = constructMgmtInputs();
+        var targetYield = MAIZE_EXCESSIVE_YIELD_;
+        var mgmt = new monsoon.alpha.gli.Mgmt(dummyDataModel);
+        var iy = mgmt.inverseYieldModel(
+            'maize', CLIMATE_BIN_, 'good', targetYield, mgmtInputs);
+        assertTrue(iy.getAchievedYield() < MAIZE_VERY_HIGH_YIELD_);
+        assertTrue(iy.getAchievedYield() > MAIZE_MODERATE_YIELD_);
+      }
+
+
+      function getTableEntryNamed(name) {
+        var mgmt = new monsoon.alpha.gli.Mgmt(dummyDataModel);
+        return mgmt.getTableEntry_(SAMPLE_TABLE, name, CLIMATE_BIN_);
+      }
+
+
+      function testGetTableEntry() {
+        var sampleEntry = getTableEntryNamed('minimum_yield_tons_per_ha');
+        assertEquals(1.0461, sampleEntry);
+      }
+
+
+      function testGetTableEntryBadColumnName() {
+        try {
+          getTableEntryNamed('invalid_name');
+          fail('Expected error should have been thrown');
+        } catch (e) {
+          // expected
+        }
+      }
+
+
+      function testAddToComponent() {
+        var testObj = new monsoon.alpha.gli.MgmtInputs(SAMPLE_VECTOR_);
+        var n = monsoon.alpha.gli.MgmtInputs.MgmtComponent.N;
+        testObj.addToComponent(n, 1);
+        assertEquals(SAMPLE_VECTOR_[n] + 1, testObj.getInputsVector()[n]);
+      }
+
+
+      function testAddToComponentIrrigation() {
+        var testObj = new monsoon.alpha.gli.MgmtInputs(SAMPLE_VECTOR_);
+        var i = monsoon.alpha.gli.MgmtInputs.MgmtComponent.I;
+        testObj.addToComponent(i, 1);
+        assertEquals(SAMPLE_VECTOR_[i] + 1, testObj.getInputsVector()[i]);
+      }
+
+
+      function testAddToComponentNegative() {
+        var testObj = new monsoon.alpha.gli.MgmtInputs(SAMPLE_VECTOR_);
+        var i = monsoon.alpha.gli.MgmtInputs.MgmtComponent.I;
+        testObj.addToComponent(i, -1);
+        assertEquals(SAMPLE_VECTOR_[i] - 1, testObj.getInputsVector()[i]);
+      }
+
+
+      function testAddToComponentNullValue() {
+        var testObj = new monsoon.alpha.gli.MgmtInputs(SAMPLE_VECTOR_);
+        var n = monsoon.alpha.gli.MgmtInputs.MgmtComponent.N;
+        testObj.addToComponent(n, null);
+        assertEquals(SAMPLE_VECTOR_[n], testObj.getInputsVector()[n]);
+      }
+    </script>
+
+  </body>
+</html>

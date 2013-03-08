@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+
+    <link type="text/css" rel="stylesheet" href="/stylesheets/closure/menubutton.css">
+    <link type="text/css" rel="stylesheet" href="/stylesheets/closure/menu.css">
+    <link type="text/css" rel="stylesheet" href="/stylesheets/closure/menuitem.css">
+    <link type="text/css" rel="stylesheet" href="/stylesheets/closure/menuseparator.css">
+    
+	<!--link type="text/css" rel="stylesheet" href="/stylesheets/jquery-ui-1.9.1.custom.min.css" /-->
+    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+    <link type="text/css" rel="stylesheet" href="/stylesheets/horizontal.css" />
+
+    <link type="text/css" rel="stylesheet" href="/stylesheets/gli.css" />
+
+ 	<style type="text/css">
+		#slider { margin: 10px; }
+    </style>
+	
+    <script type="text/javascript"
+        src="http://maps.google.com/maps/api/js?libraries=places,geometry,visualization&sensor=false">
+    </script>
+
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
+      google.load('visualization', '1', {packages:['corechart','gauge']});
+ 	</script>
+ 	
+   <!-- Libraries hosted at google https://developers.google.com/speed/libraries/devguide -->
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js"></script>
+    
+    <script type="text/javascript" src="/js/jQuery/jquery.jcarousel.js"></script>
+    
+    <script type="text/javascript" src="http://d3js.org/d3.v2.js"></script>
+    <!--script type="text/javascript" src="http://mbostock.github.com/d3/d3.geom.js?1.25.0"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js?1.25.0"></script-->
+    
+
+    <!--script type="text/javascript" src="/js/cropmapper-compiled.js"></script-->
+
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/js/util.js"></script>
+    <script type="text/javascript" src="/js/layers.js"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <script type="text/javascript" src="/js/croputils.js"></script>
+    <script type="text/javascript" src="/js/cropdatum.js"></script>
+    <script type="text/javascript" src="/js/dbbridge.js"></script>
+    <script type="text/javascript" src="/js/datamodel.js"></script>
+    <script type="text/javascript" src="/js/cropmodel.js"></script>
+    <script type="text/javascript" src="/js/mapelement.js"></script>
+    <script type="text/javascript" src="/js/GmapTooltip.js"></script>
+    <script type="text/javascript" src="/js/progressbarctl.js"></script>
+	 <script type="text/javascript" src="/js/rastermaplayer.js"></script>    
+	 <script type="text/javascript" src="/js/polygonmaplayer.js"></script>
+	 <script type="text/javascript" src="/js/GeoJSONlayer.js"></script>
+	 <script type="text/javascript" src="/js/thematicMapFeature.js"></script>
+	 <script type="text/javascript" src="/js/thematicMapLayer.js"></script>   
+	 <script type="text/javascript" src="/js/GeoTradeLink.js"></script>
+	 <script type="text/javascript" src="/js/GeoRegionMap.js"></script>	  
+	 <script type="text/javascript" src="/js/GMapS3Feature.js"></script> 	   
+	 <script type="text/javascript" src="/js/GeogAdminList.js"></script>
+    <script type="text/javascript" src="/js/heatmaplayer.js"></script>
+	 <script type="text/javascript" src="/js/GMapSnapshot.js"></script>
+    <script type="text/javascript" src="/js/layerControls.js"></script>        
+	 <script type="text/javascript" src="/js/GMapSnapshotList.js"></script>	
+	 <script type="text/javascript" src="/js/maps.js"></script>
+    <script type="text/javascript" src="/js/gli.js"></script>
+	
+       
+    <script>
+			google.load('visualization', '1', {packages: ['corechart', 'table']});
+	
+    		
+        $(function() {
+            $( "#OutputPanelHolder" ).accordion({ active: false, fillSpace: false, autoHeight: false, collapsible: true });
+				$( "#OutputPanelHolderContainer" ).resizable({ handles: "s, w, sw" });
+				//$( "#OutputPanelHolderContainer" ).draggable();  
+				          
+            $( "#InputPanelHolder" ).accordion({ active: false, fillSpace: false, autoHeight: false, collapsible: true });
+    			$( "#InputPanelHolderContainer" ).resizable({ handles: "s, e, se" });	   
+    			//$( "#InputPanelHolderContainer" ).draggable();
+    			 		
+  
+	    		$( '#jcarousel3').jcarousel({ 'wrap': 'circular'}); 		 
+	    		$( '#jcarousel3B').jcarousel({ 'wrap': 'circular'}); 			 
+
+				monsoon.alpha.Gli.initialize();
+			
+				var txtElement = null;
+				setTimeout(function(){
+					if($ ('#startTxtParagraph')) {
+							txtElement = document.getElementById('startTxtParagraph'); 
+							if(txtElement != null) {
+							 txtElement.innerHTML = "Still Loading ...";
+							 }
+					}
+				},2000);
+	
+				setTimeout(function(){
+					if($ ('#startTxtParagraph')) {
+							txtElement = document.getElementById('startTxtParagraph'); 
+							if(txtElement != null) {
+							 txtElement.innerHTML = "Loading and Loading ...";
+							 }
+					}
+				},5500);
+			
+	     });
+
+    </script>
+ 
+ 	
+  <title>Crop Mapper</title>
+  </head>
+
+  <body onload="">
+    <div class="header">
+      <div class="gli-main-header">
+        <h1>GLI Crop Mapper</h1>
+      </div>
+      <div class="maplocsearch">
+        <textarea id="search_location" rows="1" cols="50"></textarea>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="columns">
+          
+        <div class="map" id="map_main">
+          <div id="map_canvas">
+          <div class="startTxtContainer">
+  				<p id="startTxtParagraph">Loading Maps ... </p>
+				</div> 
+          </div>
+          <div class="hide" id="zoom_note">Zoom in to see data</div>
+          <div class="hide" id="message"></div>
+        </div>
+
+ 	      <a id="InputPanelHideShow" class="scrHide" href="#" onclick="$('#InputPanelHolderContainer').toggle('slide',{direction:'left'},'slow');">[&plusmn;]</a>
+ 
+			<!-- Left side input panel -->
+			<div id="InputPanelHolderContainer">
+			<div id="InputPanelHolder">
+				
+				<h3><a href="#">Choose Area</a></h3>
+				<div class="accordionItem">Select a country	
+					<select id="countryList">
+						<option>USA</option>
+						<option>China</option>
+						<option>Russia</option>
+					</select>
+					State/Provice/...
+					<select id="stateList"></select>
+							
+				</div>
+
+            <h3><a href="#">Map Layers</a></h3>
+              <div class="accordionItem">
+ 						<div id="layerControlMenu"></div>
+              </div>
+              
+            <h3><a href="#">Crop Setting</a></h3>
+            
+                <div class="class="accordionItem"">
+                    <div class="app_menu">
+                    <div class="app_menu_bar">
+                      <span id="app_menu_saved_link_area"></span>
+                      <a id="app_menu_save" href="#">Save</a>
+                    </div>
+                    </div>
+                    <label>Crop</label>
+                    <div id="sources"></div>
+                    <label>Bubble color</label>
+                    <div id="color_layers"></div>
+                    <label>Bubble size</label>
+                    <div id="size_layers"></div>
+                    <label>
+                    Nitrogen (N):
+                    <input type="text" id="nitrogen"/>
+                    </label>
+                    <label>
+                    Phosphorus (P):
+                    <input type="text" id="phosphorus"/>
+                    </label>
+                    <label>
+                    Potassium (K):
+                    <input type="text" id="potassium"/>
+                    </label>
+                    <label>
+                    Irrigation (I):
+                    <input type="text" id="irrigation"/>
+                    </label>
+                    <div class="content">
+                    <h3>Computed Outputs</h3>
+                    <div id="display_bar">
+                      <div id="display_bar_content">
+                        loading...
+                      </div>
+                    </div>
+                    </div>
+                </div>              
+                
+             <h3><a href="#">User Inputs</a></h3>
+              <div class="accordionItem">
+                  <div class="content">
+						<p>                     
+                      <div class="change_controls">
+                          <label>Total average yield:<input type="text" id="total_yield"/>
+                          </label>
+                          <label>Precipitation % change:<input type="text" id="precip_change"/>
+                          </label>
+                          <label>Temp change (degrees):<input type="text" id="temp_change"/>
+                          </label>
+                          <input type="button" id="clear_button" value="Clear scenario"/>
+                     </div>
+                  </p>
+                  <p>   
+						   <label for="ay_amount">Attainable % of Potential Yield:</label>
+						   <input type="text" id="ay_amount" style="border: 0; color: #f6931f; font-weight: bold;" />
+					   </p>
+ 		
+ 						<div id="yield_gap_slider" style="height:10px;"></div>
+ 						
+						<p></p>
+                  <input type="button" id="ScenarioPaneControl" value="Scenario Pane"/>
+
+                  </div>
+              </div>				
+				
+			</div>
+			</div>
+			
+			 <!-- The Right side output panel"-->
+ 			<div id="OutputPanelHolderContainer" >
+         <div id="OutputPanelHolder">
+                         
+              <h3><a href="#">Crop Statistics</a></h3>
+              
+              <div class="accordionItem">
+                  <div class="content">
+                     <div id="crop_table_out_div">
+                     </div>
+                  </div>
+              </div>
+              
+              <h3><a href="#">Crop Charts</a></h3>
+              <div class="accordionItem">
+                  <div class="content">
+                     <div id="crop_chart_out_div">
+                     </div>
+                  </div>
+              </div>              
+
+              
+          	 <h3><a href="#">Map Information</a></h3>
+			    <div class="accordionItem">
+				 		<div id="MapInfoDiv" class="content">
+				  			<span id="tile_debug">No Map Selected</span><br/>
+				  			<span id="map_debug">Waiting for your input ...</span>
+						</div>
+			  	 </div>
+			  	 
+          </div>
+			 </div>          
+          
+       </div>
+    </div>
+    
+    <div id="scenarioPanelVertical">
+    <div id="scenarioPanelHorizontal">
+    <div class="jcarousel-skin-default">
+        <div class="jcarousel" id="jcarousel3">
+            <ul id='mapSnapshotList'>
+			    <li>
+				<div class="map_snapshot">
+					<div class ="mssdiv" id="mss_01">
+						<a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Niger&zoom=1&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt="USA"></a>
+					</div>
+				</div>
+				</li>
+
+				<li>
+				<div class="map_snapshot" id="mss_02">
+					<a href="#"><img id="USAPlaceHolder" src="http://maps.googleapis.com/maps/api/staticmap?center=USA&zoom=3&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt="USA"></a>
+				</div>
+				</li>
+
+            <li><a href="#"><img id="AmazonPlaceHolder" src="http://maps.googleapis.com/maps/api/staticmap?center=Amazon,%20Brazil&zoom=4&size=400x400&maptype=satellite&sensor=false" width="180" height="180" alt=""></a></li>
+			            
+            </ul>
+        </div>
+	 </div>
+	 <a id="scrArrLeft_jsxw_01" class="scrArrAbsLeft" onclick="$('#jcarousel3').jcarousel('scroll', '-=1'); return false;" href="#"></a>
+	 <a id="scrArrRight_jsxw_01" class="scrArrAbsRight" onclick="$('#jcarousel3').jcarousel('scroll', '+=1'); return false;" href="#"></a>
+ 	 <a id="scrHide" class="scrHide" href="#" onclick="$('#scenarioPanelVertical').hide('slide',{direction:'down'},'slow');">[&ndash;]&nbsp;</a>
+    </div>
+    </div>
+ 	 <a id="scrShow" class="scrShow" href="#" onclick="$('#scenarioPanelVertical').toggle('slide',{direction:'down'},'slow');">[&plusmn;]&nbsp;</a>
+
+    <div id="scenarioPanelVerticalB">
+    <div id="scenarioPanelHorizontalB">
+    <div class="jcarousel-skin-default">
+        <div class="jcarousel" id="jcarousel3B">
+            <ul id='mapSnapshotListB'>
+			    <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Niger&zoom=1&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt="USA"></a>
+				</li>
+
+				<li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=USA&zoom=3&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt="USA"></a>
+				</li>
+
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=China&zoom=3&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Russia&zoom=2&size=400x400&maptype=roadmap&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Amazon,%20Brazil&zoom=4&size=400x400&maptype=satellite&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Minnesota,%20USA&zoom=5&size=400x400&maptype=hybrid&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Winsconsin,%20USA&zoom=5&size=400x400&maptype=road&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Europe&zoom=3&size=400x400&maptype=road&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=East%20Africa&zoom=4&size=400x400&maptype=road&sensor=false" width="180" height="180" alt=""></a></li>
+                <li><a href="#"><img src="http://maps.googleapis.com/maps/api/staticmap?center=Africa&zoom=2&size=400x400&maptype=road&sensor=false" width="180" height="180" alt=""></a></li>
+            </ul>
+        </div>
+	 </div>
+	 <a id="scrArrLeft_jsxw_01B" class="scrArrAbsLeft" onclick="$('#jcarousel3B').jcarousel('scroll', '-=2'); return false;" href="#"></a>
+	 <a id="scrArrRight_jsxw_01B" class="scrArrAbsRight" onclick="$('#jcarousel3B').jcarousel('scroll', '+=2'); return false;" href="#"></a>
+  	 <a id="scrHideB" class="scrHide" href="#" onclick="$('#scenarioPanelVerticalB').hide('slide',{direction:'down'},'slow');">[&ndash;]&nbsp;</a>
+
+    </div>
+    </div>
+ 	 <a id="scrShowB" class="scrShow" href="#" onclick="$('#scenarioPanelVerticalB').toggle('slide',{direction:'down'},'slow');">[&plusmn;]&nbsp;</a>
+
+  </body>
+</html>

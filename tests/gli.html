@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript"
+            src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript" src="/js/util.js"></script>
+    <script type="text/javascript" src="/js/layers.js"></script>
+    <script type="text/javascript" src="/js/management.js"></script>
+    <script type="text/javascript" src="/js/croputils.js"></script>
+    <script type="text/javascript" src="/js/cropdatum.js"></script>
+    <script type="text/javascript" src="/js/dbbridge.js"></script>
+    <script type="text/javascript" src="/js/datamodel.js"></script>
+    <script type="text/javascript" src="/js/cropmodel.js"></script>
+    <script type="text/javascript" src="/js/mapelement.js"></script>
+    <script type="text/javascript" src="/js/maps.js"></script>
+    <script type="text/javascript" src="/js/gli.js"></script>
+    <title>Tests for js/gli.js</title>
+  </head>
+
+  <body>
+    <!-- These HTML elements are used by tests. -->
+    <div id="sources">
+      <input type="button" id="clear_button"/>
+      <input type="text" id="temp_change"/>
+      <input type="text" id="precip_change"/>
+      <input type="text" id="irrigation"/>
+      <input type="text" id="nitrogen"/>
+      <input type="text" id="phosphorus"/>
+      <input type="text" id="potassium"/>
+      <input type="text" id="total_yield"/>
+      <div id="display_bar_content"></div>
+      <div id="color_layers"></div>
+      <div id="size_layers"></div>
+      <span id="map_debug">Loading map debug info...</span>
+
+    </div>
+
+    <script type="text/javascript">
+
+    goog.require('goog.testing');
+    goog.require('monsoon.alpha.Gli');
+    goog.require('monsoon.maps.Map');
+    goog.require('monsoon.maps.MapLayer');
+
+
+    /**
+     * Tests the {@link monsoon.alpha.Gli} class.
+     * <p>
+     * This implementation uses three different testing techniques:
+     * <ol>
+     *   <li> Creating an instance of the class and testing it directly.
+     *   Since no data is read until calling
+     *   {@link monsoon.alpha.Gli.setUpMonsoonMapPage} this can work fine
+     *   for some simple tests.
+     *   @see #testGetInstance
+     *   <li> Calling the method directly on a test object supplying a
+     *   mocked object for {@code this}.  This is only useful to test
+     *   the implementation of a method, because calls to other methods
+     *   from within the tested method will go through the mock.
+     *   @see #testResetScenario for an example.
+     *   <li> Setting up a test object that uses a mocked object for its
+     *   dependency through dependency injection.  For {@code Gli} this
+     *   means constructing an instance with a mocked
+     *   {@link monsoon.alpha.gli.CropModel}.
+     *   @see #testResetScenario for an example.
+     * </ol>
+     */
+
+
+    /**
+     * Prototype for the class we are testing here.
+     * @const
+     * @private
+     */
+    var GLI_METHODS_ = monsoon.alpha.Gli.prototype;
+
+    var TEST_PAYLOAD_ = [
+      [37.625, -121.4583, 11.22821],
+      [37.625, -121.5417, 11.30386]];
+
+    var TestData_ = {
+      SOME_NUMBER: 2,
+      ANOTHER_NUMBER: 33,
+      BIG_NUMBER: 1000,
+      SOME_CROP: 'some_crop',
+      SOME_CROP_ID: 'some_crop_Id',
+      ANOTHER_CROP: 'another_crop',
+      ANOTHER_CROP_ID: 'another_crop_Id',
+      CROP_GDD_BASE: 8,
+      MOCK_DB_RESPONSE: {status: 'OK', payload: TEST_PAYLOAD_},
+      MOCK_DB_ERROR_RESPONSE: {status: 'ERROR', payload: null}
+    };
+
+    var DomIds_ = {
+      DISPLAY_BAR_CONTENT: 'display_bar_content',
+      CLEAR_BUTTON: 'explore_button',
+      PRECIP_CHANGE: 'precip_change',
+      SOURCES: 'sources',
+      TEMP_CHANGE: 'temp_change',
+      TOTAL_YIELD: 'total_yield',
+      YEAR_CONTROL: 'year_control'
+    };
+
+
+    /**
+     * Provides an object to test, set up with {@link #setUpMockCropModel}.
+     * @type {monsoon.alpha.Gli}
+     * @private
+     */
+    var testObject_;
+
+    /**
+     * The mock crop model to use with {@code testObject_}.
+     * @type {goog.testing.Mock.<monsoon.alpha.gli.CropModel>}
+     * @private
+     */
+    var mockCropModel_;
+
+    /**
+     * Sets up the {@code testObject_} and {@code mockCropModel_} objects
+     * for testing a real test object with a mocked {@code CropModel}.
+     * @private
+     */
+    function setUpMockCropModel_() {
+      var mockDbBridge = new goog.testing.Mock(monsoon.maps.DbBridge);
+      mockDbBridge.$replay();  // we should never use this object.
+      mockCropModel_ = new goog.testing.LooseMock(monsoon.alpha.gli.CropModel);
+      mockCropModel_.getModelState()
+          .$returns(new monsoon.alpha.gli.ModelState(true, true, true))
+          .$anyTimes();
+      testObject_ = new monsoon.alpha.Gli(mockDbBridge, mockCropModel_);
+      testObject_.modelControls_ = new monsoon.alpha.gli.ModelControls(
+          monsoon.alpha.gli.CropModel.DEFAULT_CROP);
+      mockCropModel_.getModelControls()
+          .$returns(testObject_.modelControls_)
+          .$anyTimes();
+    }
+
+
+    /**
+     * Tests the {@link monsoon.alpha.Gli.resetScenario_} method by calling
+     * the method directly on a mock object to test.
+     * This test verifies that when the scenario temperature changes,
+     * a call to {@link monsoon.alpha.Gli.updateCropModel_} is made to
+     * update the crop model.
+     */
+    function testResetScenario() {
+      setUpMockCropModel_();
+      var mockObj = new goog.testing.Mock(monsoon.alpha.Gli);
+      mockObj.setInputValue_().$atLeastOnce();
+      mockObj.setMgmtApplied_(monsoon.alpha.gli.MgmtInputs.EMPTY_INPUTS);
+      mockObj.inputChanged_();
+      mockObj.$replay();
+      testObject_.resetScenario_.call(mockObj);
+      mockObj.$verify();
+    }
+
+
+    function testCreateCell() {
+      var lat = 10;
+      var lng = 35;
+      var latGridSize = 1;
+      var lngGridSize = 2;
+      var fillColor = '#000011';
+      var strokeWeight = 3;
+      var size = 1.2;
+      var radiusDegrees = Math.min(latGridSize, lngGridSize) / 2;
+      var radiusMeters = radiusDegrees * 111000;
+      radiusMeters *= size;
+
+      var tile = new monsoon.maps.Tile(lat, lng, null, null);
+      var cellInfo = new monsoon.maps.CellInfo(
+          tile, false, latGridSize, lngGridSize, fillColor, size, strokeWeight);
+
+      setUpMockCropModel_();
+      var cell = testObject_.createCell(cellInfo);
+      assertEquals('fillColor', fillColor, cell.fillColor);
+      assertObjectEquals('radius', radiusMeters, cell.getRadius());
+    }
+
+
+    function setUpElementInput_(id, v) {
+      var element = goog.dom.getElement(id);
+      element.value = String(v);
+    }
+
+
+    // An argument list verifier that just checks that the right
+    // number of arguments were supplied.
+    function numberOfArgumentsMatch(expectedArray, actualArray) {
+            return expectedArray.length == actualArray.length;
+    }
+
+
+    function callInputChanged_(precip, temp, totYield) {
+      setUpMockCropModel_();
+      testObject_.modelControls_.precipChange = precip;
+      testObject_.modelControls_.tempChange = temp;
+      testObject_.modelControls_.totalYield = totYield;
+      testObject_.modelControls_.granularity =
+          monsoon.alpha.gli.ModelControls.granularity.LOCAL;
+      testObject_.activeLayers_ = [];
+      testObject_.dataBounds_ = new google.maps.LatLngBounds();
+      mockCropModel_.$registerArgumentListVerifier('checkScenarioSanity',
+          numberOfArgumentsMatch);
+      mockCropModel_.checkScenarioSanity(testObject_.modelControls_)
+         .$returns(null);
+      mockCropModel_.$registerArgumentListVerifier('setModelControls',
+          numberOfArgumentsMatch);
+      mockCropModel_.setModelControls(testObject_.modelControls_)
+          .$atLeastOnce();
+      mockCropModel_.getWorldModelId()
+          .$returns(0)
+          .$anyTimes();
+      mockCropModel_.getGranularity()
+          .$returns(monsoon.alpha.gli.ModelControls.granularity.LOCAL)
+          .$anyTimes();
+      var mockDataModel = new goog.testing.LooseMock(
+          monsoon.alpha.gli.DataModel);
+      mockDataModel.getLayers().$returns({}).$anyTimes();
+      mockDataModel.$replay();
+      mockCropModel_.getDataModel().$returns(mockDataModel).$anyTimes();
+      mockCropModel_.$registerArgumentListVerifier('getLayer',
+          numberOfArgumentsMatch);
+      mockCropModel_.getLayer(undefined).$returns(null).$anyTimes();
+      var layer = new monsoon.maps.MapLayer();
+      var yieldLayerName = monsoon.alpha.gli.CropModel.LayerNames.S_YIELD;
+      mockCropModel_.getLayer(yieldLayerName).$returns(layer).$anyTimes();
+      mockCropModel_.$replay();
+      testObject_.inputChanged_();
+      mockCropModel_.$verify();
+      var modelControls = testObject_.modelControls_;
+      assertEquals(precip, modelControls.precipChange);
+      assertEquals(temp, modelControls.tempChange);
+    }
+
+
+    function testInputChanged() {
+      setUpElementInput_(DomIds_.PRECIP_CHANGE, TestData_.ANOTHER_NUMBER);
+      setUpElementInput_(DomIds_.TEMP_CHANGE, TestData_.SOME_NUMBER);
+      setUpElementInput_(DomIds_.TOTAL_YIELD, TestData_.BIG_NUMBER);
+      callInputChanged_(TestData_.ANOTHER_NUMBER, TestData_.SOME_NUMBER,
+          TestData_.BIG_NUMBER);
+    }
+
+
+    function testInputChangedEmptyInputs() {
+      setUpElementInput_(DomIds_.PRECIP_CHANGE, '');
+      setUpElementInput_(DomIds_.TEMP_CHANGE, '');
+      setUpElementInput_(DomIds_.TOTAL_YIELD, '');
+      callInputChanged_(0, 0, 0);
+    }
+
+
+    function testInputChangedInsaneInput() {
+      setUpElementInput_(DomIds_.PRECIP_CHANGE, '');
+      setUpElementInput_(DomIds_.TEMP_CHANGE, TestData_.BIG_NUMBER);
+      setUpElementInput_(DomIds_.TOTAL_YIELD, '');
+      setUpMockCropModel_();
+      testObject_.modelControls_.tempChange = TestData_.BIG_NUMBER;
+      var bigMessage = 'Too big!';
+      mockCropModel_.checkScenarioSanity(testObject_.modelControls_)
+          .$returns(bigMessage);
+      mockCropModel_.$replay();
+      testObject_.inputChanged_();
+      mockCropModel_.$verify();
+    }
+
+
+    function testMaybePushDescription() {
+      var myArray = [];
+      GLI_METHODS_.maybePushDescription_(
+          myArray, TestData_.SOME_CROP, TestData_.SOME_NUMBER);
+      assertEquals(1, myArray.length);
+      assertEquals(TestData_.SOME_CROP + TestData_.SOME_NUMBER, myArray.pop());
+    }
+
+
+    // TODO: add tests for many of the Gli methods once the real
+    // UX has been built.
+
+    </script>
+  </body>
+</html>

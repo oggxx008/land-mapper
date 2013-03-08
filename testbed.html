@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" left="500" width="800" height="430" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+var img = new Image();
+img.src = 'https://netfiles.umn.edu/users/sunx0170/GLI/Raster/yieldgap/CNTYS/CHN_maize_gap_2000_20.png';
+
+var c=document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
+ctx.drawImage(img,0,0);
+var imgData = ctx.getImageData(0, 0,200,200);
+console.log(imgData.data.length);
+/*for (var i=640;i<imgData.data.length;i+=4)
+  {
+  imgData.data[i+0]=255;
+  imgData.data[i+1]=200;
+  imgData.data[i+2]=0;
+  imgData.data[i+3]=255;
+  }
+*/
+//ctx.putImageData(imgData,100,100,0,0,200,100);
+
+</script>
+
+</body>
+</html>
+

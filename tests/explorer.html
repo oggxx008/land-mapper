@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!--
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <script type="text/javascript"
+          src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="/jsunit/app/jsUnitCore.js"></script>
+    <script type="text/javascript" src="/closure/goog/base.js"></script>
+    <script type="text/javascript" src="/js/util.js"></script>
+    <script type="text/javascript" src="/js/layers.js"></script>
+    <script type="text/javascript" src="/js/dbbridge.js"></script>
+    <script type="text/javascript" src="/js/mapelement.js"></script>
+    <script type="text/javascript" src="/js/maps.js"></script>
+    <script type="text/javascript" src="/js/explorer.js"></script>
+    <title>Tests for js/explorer.js</title>
+  </head>
+
+  <body>
+
+    <script type="text/javascript">
+      goog.require('monsoon.alpha.Explorer');
+
+      function testCreateCell() {
+        var lat = 10;
+        var lng = 35;
+        var latGridSize = 1;
+        var lngGridSize = 1.2;
+        var fillColor = '#000011';
+        var strokeWeight = 3;
+        var bounds = new google.maps.LatLngBounds(
+            new google.maps.LatLng(lat, lng),
+            new google.maps.LatLng(
+                lat + latGridSize, lng + lngGridSize));
+
+        var tile = new monsoon.maps.Tile(lat, lng, null, null);
+        var cellInfo = new monsoon.maps.CellInfo(
+            tile, false, latGridSize, lngGridSize, fillColor, 1, strokeWeight);
+
+        var testObj = new monsoon.alpha.Explorer();
+        var cell = testObj.createCell(cellInfo);
+
+        assertEquals('fillColor', fillColor, cell.fillColor);
+        assertEquals('strokeWeight', strokeWeight, cell.strokeWeight);
+        assertObjectEquals('bounds', bounds, cell.bounds);
+      }
+    </script>
+
+  </body>
+</html>

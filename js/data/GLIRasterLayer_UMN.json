@@ -1,0 +1,12 @@
+{"type":"GLIRasterLayerFeature", "RasterLayers":[
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/prec/prec_81","layerName":"Precipitation in Aug 2000","layerIndex":"6"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/tmean/tmean_81","layerName":"Avg Temperature in Aug 2000","layerIndex":"7"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/pop/pop_00","layerName":"Population in 2000","layerIndex":"8"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/land/land_51","layerName":"Land Use","layerIndex":"9"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/irriptg/irriptg_07","layerName":"Percentage of Irrigated Land","layerIndex":"10"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/maize/maptiles_f","layerName":"Maize Yield","layerIndex":"0"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/maize/maptiles_2","layerName":"Maize YieldBi","layerIndex":"1"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/wheat/wheat_00","layerName":"Wheat Yield","layerIndex":"3"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/rice/rice_00","layerName":"Rice Yield","layerIndex":"4"},
+{"tileURL":"https://netfiles.umn.edu/users/sunx0170/GLI/Raster/soybean/soybean_00","layerName":"Soybean Yield","layerIndex":"5"}
+]}

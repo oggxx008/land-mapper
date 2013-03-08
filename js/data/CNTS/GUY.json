@@ -1,0 +1,12 @@
+{"type":"provinceCollection", "provinces":[
+{"C":"GUY","D":"675","N":"Barima-Waini","X":"-59.74533","Y":"7.619544","Z":"7"},
+{"C":"GUY","D":"680","N":"Cuyuni-Mazaruni","X":"-58.819835","Y":"7.177089","Z":"8"},
+{"C":"GUY","D":"678","N":"Demerara-Mahaica","X":"-58.457511","Y":"6.604309","Z":"9"},
+{"C":"GUY","D":"677","N":"East Berbice-Corentyne","X":"-58.115204","Y":"6.493978","Z":"9"},
+{"C":"GUY","D":"679","N":"Essequibo Islands-West Demerara","X":"-57.840379","Y":"6.219206","Z":"9"},
+{"C":"GUY","D":"671","N":"Mahaica-Berbice","X":"-57.661115","Y":"3.389484","Z":"7"},
+{"C":"GUY","D":"676","N":"Pomeroon-Supenaam","X":"-59.949225","Y":"6.155555","Z":"7"},
+{"C":"GUY","D":"672","N":"Potaro-Siparuni","X":"-59.279568","Y":"4.822628","Z":"7"},
+{"C":"GUY","D":"674","N":"Upper Demerara-Berbice","X":"-58.983479","Y":"2.814326","Z":"7"},
+{"C":"GUY","D":"673","N":"Upper Takutu-Upper Essequibo","X":"-58.280135","Y":"5.382368","Z":"8"}
+]}
