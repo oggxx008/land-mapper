@@ -505,8 +505,8 @@ monsoon.maps.Map.prototype.setUpMonsoonMapPage = function() {
     this.drawMap();
   }
 	// move this to somewhere. Only when maps are loaded and the view is local, these will be called.   
-	//this.resetLayers();
-  	//this.dbBridge.requestMetadata(goog.bind(this.handleTableMetadataRequest, this));
+	this.resetLayers();
+  	this.dbBridge.requestMetadata(goog.bind(this.handleTableMetadataRequest, this));
 };
 
 
@@ -1046,7 +1046,7 @@ monsoon.maps.Map.prototype.loadTilesIncrementally = function() {
 monsoon.maps.Map.prototype.mapChanged = function() {
 	//console.log("mapChanged()");
 	this.mapCenter_ = this.map_.getCenter();
-	//this.updateTiles();
+	this.updateTiles();
 	this.notifyMapChanged();
 
 	//console.log('Map changed');

@@ -61,8 +61,8 @@ monsoon.alpha.Gli = function(opt_dbBridge, opt_cropModel) {
 
 	// TODO: Work to simplify this initialization?
 	var replaceMapLayerCallback = goog.bind(this.replaceMapLayer, this);
-	//var dataModel = new monsoon.alpha.gli.DataModel(replaceMapLayerCallback, this.getDbBridge());
-  	var dataModel = null;
+	var dataModel = new monsoon.alpha.gli.DataModel(replaceMapLayerCallback, this.getDbBridge());
+  	//var dataModel = null;
 	
   /**
    * The crop model to use. This determines policy for applying
